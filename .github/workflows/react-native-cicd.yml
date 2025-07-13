@@ -58,11 +58,12 @@ jobs:
       - run: |
           yarn install
           yarn global add eas-cli@latest
+          sudo apt-get update && sudo apt-get install -y jq
 
       - name: 📱 Build Development APK (Remote)
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'dev' || github.event_name == 'push'
         run: |
-          eas build --platform android --profile development --non-interactive --json --output=build-dev.json
+          eas build --platform android --profile development --non-interactive --json > build-dev.json
         env:
           NODE_ENV: development
 
@@ -76,7 +77,7 @@ jobs:
       - name: 📱 Build Production APK (Remote)
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || github.event_name == 'push'
         run: |
-          eas build --platform android --profile production-apk --non-interactive --json --output=build-prod.json
+          eas build --platform android --profile production-apk --non-interactive --json > build-prod.json
         env:
           NODE_ENV: production
 
@@ -95,7 +96,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
-          # changelog from latest tag
           if git describe --tags --abbrev=0 > /dev/null 2>&1; then
             LAST_TAG=$(git describe --tags --abbrev=0)
             git log $LAST_TAG..HEAD --pretty=format:"- %s" > changelog.md
