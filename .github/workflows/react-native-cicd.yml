@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
-      - run: echo "Proceeding with workflow"
+      - run: echo "✅ Proceeding with workflow"
 
   test:
     needs: check-skip
@@ -70,8 +70,13 @@ jobs:
       - name: 📥 Download Development APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'dev' || github.event_name == 'push'
         run: |
-          URL=$(jq -r '.artifacts.buildUrl' build-dev.json)
-          echo "Dev APK URL: $URL"
+          URL=$(jq -r '.[0].artifacts.buildUrl' build-dev.json)
+          if [ -z "$URL" ] || [ "$URL" == "null" ]; then
+            echo "❌ Failed to extract development APK URL from build-dev.json"
+            cat build-dev.json
+            exit 1
+          fi
+          echo "✅ Dev APK URL: $URL"
           curl -L -o app-dev.apk "$URL"
 
       - name: 📱 Build Production APK (Remote)
@@ -84,8 +89,13 @@ jobs:
       - name: 📥 Download Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || github.event_name == 'push'
         run: |
-          URL=$(jq -r '.artifacts.buildUrl' build-prod.json)
-          echo "Prod APK URL: $URL"
+          URL=$(jq -r '.[0].artifacts.buildUrl' build-prod.json)
+          if [ -z "$URL" ] || [ "$URL" == "null" ]; then
+            echo "❌ Failed to extract production APK URL from build-prod.json"
+            cat build-prod.json
+            exit 1
+          fi
+          echo "✅ Prod APK URL: $URL"
           curl -L -o app-prod.apk "$URL"
 
       - name: 🏷️ Generate build info
